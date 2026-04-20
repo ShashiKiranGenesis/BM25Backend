@@ -1,0 +1,71 @@
+{
+  "documents": {
+    "6csesyll.pdf": {
+      "size": 618195,
+      "modified": "2026-04-20T09:05:41.135784",
+      "hash": "2ead5d51efdfbcc8618be8f38c05aeb0",
+      "chunks_count": 256,
+      "processed_at": "2026-04-20T15:38:51.296516",
+      "file_path": "uploads\\6csesyll.pdf",
+      "date_uploaded": "2026-04-20T15:38:51.296528",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: 6csesyll.pdf",
+      "tags": []
+    },
+    "Advances in Human-Computer Interaction - 2019 - Khan - The Impact of an Augmented Reality Application on Learning.pdf": {
+      "size": 1931170,
+      "modified": "2026-04-20T13:05:41.621568",
+      "hash": "cb7c70893d8f0e18da55fe52173e8a6e",
+      "chunks_count": 152,
+      "processed_at": "2026-04-20T15:38:51.608658",
+      "file_path": "uploads\\Advances in Human-Computer Interaction - 2019 - Khan - The Impact of an Augmented Reality Application on Learning.pdf",
+      "date_uploaded": "2026-04-20T15:38:51.608672",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: Advances in Human-Computer Interaction - 2019 - Khan - The Impact of an Augmented Reality Application on Learning.pdf",
+      "tags": []
+    },
+    "Augmented_Reality_and_Virtual_Reality_in.pdf": {
+      "size": 224119,
+      "modified": "2026-04-20T13:19:32.898041",
+      "hash": "3cebec3272d60058ef2f4607cb2a4623",
+      "chunks_count": 59,
+      "processed_at": "2026-04-20T15:38:51.715047",
+      "file_path": "uploads\\Augmented_Reality_and_Virtual_Reality_in.pdf",
+      "date_uploaded": "2026-04-20T15:38:51.715054",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: Augmented_Reality_and_Virtual_Reality_in.pdf",
+      "tags": []
+    },
+    "CV_report.pdf": {
+      "size": 868130,
+      "modified": "2025-05-11T11:27:48.491767",
+      "hash": "d042773a8a7e53cac919aa5cd16c75cb",
+      "chunks_count": 35,
+      "processed_at": "2026-04-20T15:38:51.786976",
+      "file_path": "uploads\\CV_report.pdf",
+      "date_uploaded": "2026-04-20T15:38:51.786984",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: CV_report.pdf",
+      "tags": []
+    }
+  },
+  "last_updated": "2026-04-20T15:39:27.358664",
+  "total_chunks": 502,
+  "total_documents": 4
+}
