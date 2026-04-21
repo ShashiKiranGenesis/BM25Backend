@@ -1,9 +1,9 @@
 from rank_bm25 import BM25Okapi
 from typing import List, Dict
 import re
-import logging
+from utils.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 def tokenize(text: str) -> List[str]:

@@ -4,15 +4,15 @@ import hashlib
 from datetime import datetime
 from typing import List, Dict, Optional
 from pathlib import Path
-import logging
 
 from .loader import load_and_chunk_pdf
+from utils.logger import setup_logger
 
 METADATA_FILE = "MetaData.json"
 UPLOADS_DIR = "uploads"
 CHUNKS_DIR = "chunks"
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 class DocumentManager:

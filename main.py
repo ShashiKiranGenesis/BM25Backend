@@ -6,23 +6,16 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 import os
 import asyncio
-import logging
 
+from utils.logger import setup_logger, configure_root_logger
 from rag.document_manager import DocumentManager
 from rag.retriever import BM25Retriever
 from rag.reranker import FlashReranker
 from rag.generator import generate_answer
 
-# Configure logging with UTF-8 encoding for Windows compatibility
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app.log', encoding='utf-8')
-    ]
-)
-logger = logging.getLogger(__name__)
+# Configure logging
+configure_root_logger(log_file="app.log")
+logger = setup_logger(__name__)
 
 load_dotenv()
 

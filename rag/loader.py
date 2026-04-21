@@ -1,9 +1,9 @@
 import fitz  # PyMuPDF
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, Dict
-import logging
+from utils.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 def load_and_chunk_pdf(file_path: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[Dict]:

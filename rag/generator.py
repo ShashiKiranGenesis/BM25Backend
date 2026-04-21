@@ -1,9 +1,9 @@
 from openai import AsyncOpenAI
 from typing import List, Dict
 import os
-import logging
+from utils.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 
 
 def _get_client() -> AsyncOpenAI:
