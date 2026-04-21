@@ -5,7 +5,7 @@ from app.rag.document_manager import DocumentManager
 from app.rag.generator import generate_answer
 from app.rag.reranker import FlashReranker
 from app.rag.retriever import BM25Retriever
-from app.rag.vector_store import VectorStore
+from config import VECTOR_BACKEND
 
 logger = get_logger(__name__)
 
@@ -15,27 +15,20 @@ logger = get_logger(__name__)
 doc_manager = DocumentManager()
 reranker = FlashReranker()
 retriever: Optional[BM25Retriever] = None
-vector_store: Optional[VectorStore] = None
+vector_store = None  # Will be initialized based on VECTOR_BACKEND
 
 
 def initialize_rag():
     """
-    Load all documents, build the BM25 index, and initialise the
-    persistent ChromaDB vector store.
+    Load all documents and build the BM25 index.
+    Vector store is initialized lazily on first use to avoid blocking
+    server startup on model downloads.
 
     Called once on startup and again after every upload/refresh.
     """
-    global retriever, vector_store
+    global retriever
 
     logger.info("Initializing RAG system...")
-
-    # --- Vector store (persistent, survives restarts) -------------------
-    if vector_store is None:
-        logger.info("Creating persistent ChromaDB vector store...")
-        vector_store = VectorStore()
-        # Wire the vector store into the document manager so that newly
-        # processed documents are automatically upserted.
-        doc_manager.set_vector_store(vector_store)
 
     # --- Load / process documents ---------------------------------------
     all_chunks = doc_manager.load_all_documents()
@@ -47,6 +40,55 @@ def initialize_rag():
     else:
         logger.warning("No documents loaded. Add PDF files to uploads/ directory.")
         retriever = None
+
+
+def _ensure_vector_store():
+    """
+    Lazy initialization of vector store. Called only when vector retrieval
+    is actually needed. This prevents blocking server startup on model downloads.
+    
+    Uses VECTOR_BACKEND config to choose between:
+    - "tfidf": Lightweight, no download required (default)
+    - "transformer": Better quality, requires model download
+    """
+    global vector_store
+
+    if vector_store is None:
+        logger.info(
+            "Initializing vector store (first use) — backend: %s",
+            VECTOR_BACKEND
+        )
+        try:
+            if VECTOR_BACKEND == "tfidf":
+                from app.rag.vector_store_tfidf import TfidfVectorStore
+                vector_store = TfidfVectorStore()
+            else:
+                from app.rag.vector_store import VectorStore
+                vector_store = VectorStore()
+            
+            # Wire the vector store into the document manager so that newly
+            # processed documents are automatically upserted.
+            doc_manager.set_vector_store(vector_store)
+            
+            # If we already have chunks loaded, populate the vector store
+            if retriever is not None:
+                all_chunks = retriever.chunks  # BM25Retriever stores all chunks
+                if all_chunks:
+                    logger.info(
+                        "Populating vector store with %d existing chunks...",
+                        len(all_chunks)
+                    )
+                    vector_store.upsert_chunks(all_chunks)
+                    logger.info("Vector store populated successfully")
+            
+            logger.info("Vector store initialized successfully")
+        except Exception as e:
+            logger.error("Failed to initialize vector store: %s", e)
+            logger.warning(
+                "Vector retrieval will be unavailable. "
+                "Check network connection for model download or use VECTOR_BACKEND=tfidf"
+            )
+            raise
 
 
 def get_retriever() -> Optional[BM25Retriever]:
@@ -139,21 +181,30 @@ async def run_rag_pipeline(
         raise LookupError("No relevant chunks found for your question.")
 
     # Step 2 — Vector Retrieval (optional)
-    if use_vector and vector_store is not None and vector_store.count() > 0:
-        vector_results = vector_store.query(
-            question, top_k=top_k, filter_files=filter_files
-        )
-        logger.debug("Vector store retrieved %d chunks", len(vector_results))
+    if use_vector:
+        try:
+            # Lazy initialization on first use
+            _ensure_vector_store()
+            
+            if vector_store is not None and vector_store.count() > 0:
+                vector_results = vector_store.query(
+                    question, top_k=top_k, filter_files=filter_files
+                )
+                logger.debug("Vector store retrieved %d chunks", len(vector_results))
 
-        # Merge BM25 + vector results
-        candidates = _merge_and_deduplicate(bm25_results, vector_results)
-        logger.debug("Merged candidate pool: %d unique chunks", len(candidates))
+                # Merge BM25 + vector results
+                candidates = _merge_and_deduplicate(bm25_results, vector_results)
+                logger.debug("Merged candidate pool: %d unique chunks", len(candidates))
+            else:
+                logger.warning(
+                    "Vector retrieval requested but vector store is empty; "
+                    "falling back to BM25 only."
+                )
+                candidates = bm25_results
+        except Exception as e:
+            logger.error("Vector retrieval failed: %s — falling back to BM25 only", e)
+            candidates = bm25_results
     else:
-        if use_vector:
-            logger.warning(
-                "Vector retrieval requested but vector store is empty or unavailable; "
-                "falling back to BM25 only."
-            )
         candidates = bm25_results
 
     if not candidates:

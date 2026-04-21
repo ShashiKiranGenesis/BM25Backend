@@ -19,6 +19,9 @@ METADATA_FILE: str = "MetaData.json"
 
 # ChromaDB — persistent vector store
 CHROMA_DIR: str = os.getenv("CHROMA_DIR", "chroma_db")
+# Vector backend: "tfidf" (no download, lightweight) or "transformer" (better quality, requires download)
+VECTOR_BACKEND: str = os.getenv("VECTOR_BACKEND", "tfidf")
+# Options: "all-MiniLM-L6-v2" (90MB, best quality) or "paraphrase-MiniLM-L3-v2" (61MB, faster download)
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 CHROMA_COLLECTION: str = "rag_documents"
 

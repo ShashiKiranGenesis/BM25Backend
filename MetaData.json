@@ -97,9 +97,26 @@
       "description": "Auto-processed document: BCS613B-module-3-textbook.pdf",
       "tags": [],
       "chunks_json_path": "chunks\\BCS613B-module-3-textbook_chunks.json"
+    },
+    "cv-1.pdf": {
+      "size": 219432,
+      "modified": "2026-04-21T13:31:48.875777",
+      "hash": "4e6f7f1a7a9af3070d66ff7dae02ecb6",
+      "chunks_count": 59,
+      "processed_at": "2026-04-21T13:31:49.787775",
+      "file_path": "uploads\\cv-1.pdf",
+      "date_uploaded": "2026-04-21T13:31:49.787781",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: cv-1.pdf",
+      "tags": [],
+      "chunks_json_path": "chunks\\cv-1_chunks.json"
     }
   },
-  "last_updated": "2026-04-21T11:57:16.372351",
-  "total_chunks": 1082,
-  "total_documents": 6
+  "last_updated": "2026-04-21T13:31:50.049207",
+  "total_chunks": 1141,
+  "total_documents": 7
 }

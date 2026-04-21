@@ -62,7 +62,25 @@ class VectorStore:
     def __init__(self):
         os.makedirs(CHROMA_DIR, exist_ok=True)
         self._client = chromadb.PersistentClient(path=CHROMA_DIR)
-        self._ef = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
+        
+        logger.info(
+            "Initializing embedding model '%s' (first-time download may take 2-5 minutes)...",
+            EMBEDDING_MODEL
+        )
+        try:
+            self._ef = SentenceTransformerEmbeddingFunction(model_name=EMBEDDING_MODEL)
+        except Exception as e:
+            logger.error(
+                "Failed to load embedding model '%s': %s",
+                EMBEDDING_MODEL,
+                str(e)
+            )
+            logger.error(
+                "This is usually due to network issues during model download. "
+                "Please check your internet connection and try again."
+            )
+            raise
+            
         self._collection = self._client.get_or_create_collection(
             name=CHROMA_COLLECTION,
             embedding_function=self._ef,
