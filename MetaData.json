@@ -63,9 +63,43 @@
       "version": "1.0",
       "description": "Auto-processed document: CV_report.pdf",
       "tags": []
+    },
+    "BCS601.pdf": {
+      "size": 633828,
+      "modified": "2026-04-21T11:21:51.497283",
+      "hash": "f229cc67cbb8b79c483e46826e5b321b",
+      "chunks_count": 6,
+      "processed_at": "2026-04-21T11:21:51.703060",
+      "file_path": "uploads\\BCS601.pdf",
+      "date_uploaded": "2026-04-21T11:21:51.703069",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: BCS601.pdf",
+      "tags": [],
+      "chunks_json_path": "chunks\\BCS601_chunks.json"
+    },
+    "BCS613B-module-3-textbook.pdf": {
+      "size": 9733665,
+      "modified": "2026-04-21T11:40:07.013193",
+      "hash": "f7fe5ef10d0351c89212a43638850175",
+      "chunks_count": 574,
+      "processed_at": "2026-04-21T11:40:08.997386",
+      "file_path": "uploads\\BCS613B-module-3-textbook.pdf",
+      "date_uploaded": "2026-04-21T11:40:08.997404",
+      "author": "Admin",
+      "category": "General",
+      "department": "Unknown",
+      "doc_type": "PDF Document",
+      "version": "1.0",
+      "description": "Auto-processed document: BCS613B-module-3-textbook.pdf",
+      "tags": [],
+      "chunks_json_path": "chunks\\BCS613B-module-3-textbook_chunks.json"
     }
   },
-  "last_updated": "2026-04-20T20:22:58.513266",
-  "total_chunks": 502,
-  "total_documents": 4
+  "last_updated": "2026-04-21T11:44:47.299111",
+  "total_chunks": 1082,
+  "total_documents": 6
 }
