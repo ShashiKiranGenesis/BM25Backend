@@ -9,3 +9,5 @@ langchain-text-splitters
 groq
 python-dotenv
 werkzeug
+openai
+colorlog
