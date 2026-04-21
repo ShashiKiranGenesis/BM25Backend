@@ -3,20 +3,47 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 import os
 import asyncio
+import logging
 
 from rag.document_manager import DocumentManager
 from rag.retriever import BM25Retriever
 from rag.reranker import FlashReranker
 from rag.generator import generate_answer
 
+# Configure logging with UTF-8 encoding for Windows compatibility
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for FastAPI application startup and shutdown."""
+    # Startup
+    logger.info("[STARTUP] Starting up FastAPI application")
+    initialize_system()
+    logger.info("[STARTUP] Application startup complete")
+    yield
+    # Shutdown
+    logger.info("[SHUTDOWN] Application shutting down")
+
 
 app = FastAPI(
     title="Vectorless RAG API",
     description="BM25 + Reranker + LLM — No vector database needed!",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan
 )
 
 # Enable CORS so frontend can call this API
@@ -40,24 +67,18 @@ def initialize_system():
     """Initialize the RAG system by loading all documents."""
     global retriever
     
-    print("🚀 Initializing RAG system...")
+    logger.info("[INIT] Initializing RAG system...")
     all_chunks = doc_manager.load_all_documents()
     
     if all_chunks:
         retriever = BM25Retriever(all_chunks)
-        print("✅ RAG system ready!")
+        logger.info("[OK] RAG system ready!")
     else:
-        print("⚠️  No documents loaded. Add PDF files to uploads/ directory.")
+        logger.warning("[WARN] No documents loaded. Add PDF files to uploads/ directory.")
         retriever = None
 
 
-# Initialize on startup
-@app.on_event("startup")
-async def startup_event():
-    initialize_system()
-
-
-# ---------------------------------------------------------------------------
+# `---------------------------------------------------------------------------
 # Request/Response Models
 # ---------------------------------------------------------------------------
 class QueryRequest(BaseModel):
@@ -138,6 +159,7 @@ async def upload_pdf(file: UploadFile = File(...)):
     """Upload a PDF file and reinitialize the system."""
     
     if not file.filename.endswith(".pdf"):
+        logger.warning(f"Rejected upload: {file.filename} - not a PDF")
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
     try:
@@ -152,10 +174,14 @@ async def upload_pdf(file: UploadFile = File(...)):
             content = await file.read()
             f.write(content)
         
+        logger.info(f"Uploaded PDF: {filename}, size: {len(content)} bytes")
+        
         # Reinitialize system
         initialize_system()
         
         doc_info = doc_manager.get_document_info()
+        
+        logger.info(f"System reinitialized after upload. Total documents: {doc_info['total_documents']}, chunks: {doc_info['total_chunks']}")
         
         return UploadResponse(
             success=True,
@@ -166,6 +192,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         )
     
     except Exception as e:
+        logger.error(f"Error processing PDF upload: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
 
 
@@ -173,8 +200,11 @@ async def upload_pdf(file: UploadFile = File(...)):
 def refresh_documents():
     """Refresh/reload all documents from uploads directory."""
     try:
+        logger.info("Refreshing documents...")
         initialize_system()
         doc_info = doc_manager.get_document_info()
+        
+        logger.info(f"Documents refreshed. Total documents: {doc_info['total_documents']}, chunks: {doc_info['total_chunks']}")
         
         return UploadResponse(
             success=True,
@@ -183,6 +213,7 @@ def refresh_documents():
             total_chunks=doc_info["total_chunks"]
         )
     except Exception as e:
+        logger.error(f"Error refreshing documents: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error refreshing documents: {str(e)}")
 
 
@@ -190,7 +221,10 @@ def refresh_documents():
 async def ask_question(request: QueryRequest):
     """Ask a question using BM25 + Reranker + LLM."""
     
+    logger.info(f"Processing question: '{request.question}' (top_k={request.top_k}, rerank_top_n={request.rerank_top_n})")
+    
     if retriever is None:
+        logger.warning("No documents loaded - rejecting question")
         raise HTTPException(
             status_code=400,
             detail="No documents loaded. Upload a PDF first or add files to uploads/ directory."
@@ -198,6 +232,7 @@ async def ask_question(request: QueryRequest):
     
     try:
         # Step 1 — BM25 Retrieval (with optional file filter)
+        logger.debug("Starting BM25 retrieval")
         bm25_results = retriever.retrieve(
             request.question,
             top_k=request.top_k,
@@ -205,16 +240,25 @@ async def ask_question(request: QueryRequest):
         )
         
         if not bm25_results:
+            logger.warning("No relevant chunks found for question")
             raise HTTPException(
                 status_code=404,
                 detail="No relevant chunks found for your question."
             )
         
+        logger.info(f"BM25 retrieved {len(bm25_results)} chunks")
+        
         # Step 2 — Rerank
+        logger.debug("Starting reranking")
         reranked = reranker.rerank(request.question, bm25_results, top_n=request.rerank_top_n)
         
+        logger.info(f"Reranked to top {len(reranked)} chunks")
+        
         # Step 3 — Generate Answer
+        logger.debug("Starting answer generation")
         answer = await generate_answer(request.question, reranked)
+        
+        logger.info("Answer generated successfully")
         
         # Build response
         source_chunks = [
@@ -239,6 +283,7 @@ async def ask_question(request: QueryRequest):
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error processing question: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
 
 
@@ -246,13 +291,17 @@ async def ask_question(request: QueryRequest):
 def update_metadata(filename: str, metadata: dict):
     """Update metadata for a specific document."""
     try:
+        logger.info(f"Updating metadata for document: {filename}")
         if doc_manager.update_document_metadata(filename, metadata):
+            logger.info(f"Metadata updated successfully for {filename}")
             return {"success": True, "message": "Metadata updated successfully"}
         else:
+            logger.warning(f"Document not found: {filename}")
             raise HTTPException(status_code=404, detail="Document not found")
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"Error updating metadata for {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

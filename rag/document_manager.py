@@ -4,12 +4,15 @@ import hashlib
 from datetime import datetime
 from typing import List, Dict, Optional
 from pathlib import Path
+import logging
 
 from .loader import load_and_chunk_pdf
 
 METADATA_FILE = "MetaData.json"
 UPLOADS_DIR = "uploads"
 CHUNKS_DIR = "chunks"
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentManager:
@@ -24,7 +27,7 @@ class DocumentManager:
         """Ensure chunks directory exists."""
         if not os.path.exists(self.chunks_dir):
             os.makedirs(self.chunks_dir, exist_ok=True)
-            print(f"Created chunks directory: {self.chunks_dir}")
+            logger.info(f"Created chunks directory: {self.chunks_dir}")
     
     def _save_chunks_to_json(self, filename: str, chunks: List[Dict]):
         """Save document chunks to JSON file in chunks directory."""
@@ -47,7 +50,7 @@ class DocumentManager:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(chunks_data, f, indent=2, ensure_ascii=False)
         
-        print(f"💾 Saved {len(chunks)} chunks to: {json_path}")
+        logger.info(f"[SAVE] Saved {len(chunks)} chunks to: {json_path}")
         return json_path
     
     def _load_chunks_from_json(self, filename: str) -> Optional[List[Dict]]:
@@ -64,7 +67,7 @@ class DocumentManager:
                     data = json.load(f)
                     return data.get("chunks", [])
             except (json.JSONDecodeError, FileNotFoundError) as e:
-                print(f"⚠️  Error loading chunks from {json_path}: {e}")
+                logger.warning(f"[WARN] Error loading chunks from {json_path}: {e}")
         
         return None
     
@@ -169,7 +172,7 @@ class DocumentManager:
     
     def process_document(self, file_path: str, additional_metadata: Dict = None) -> List[Dict]:
         """Process a single PDF document with enhanced metadata."""
-        print(f"Processing: {file_path}")
+        logger.info(f"Processing document: {file_path}")
         
         # Load and chunk the PDF
         chunks = load_and_chunk_pdf(file_path)
@@ -227,10 +230,10 @@ class DocumentManager:
         all_chunks = []
         
         if not pdf_files:
-            print("No PDF files found in uploads directory")
+            logger.warning("No PDF files found in uploads directory")
             return []
         
-        print(f"Found {len(pdf_files)} PDF files")
+        logger.info(f"Found {len(pdf_files)} PDF files")
         
         # Process each file
         for file_path in pdf_files:
@@ -238,11 +241,11 @@ class DocumentManager:
                 try:
                     chunks = self.process_document(file_path)
                     all_chunks.extend(chunks)
-                    print(f"✓ Processed {os.path.basename(file_path)}: {len(chunks)} chunks")
+                    logger.info(f"[OK] Processed {os.path.basename(file_path)}: {len(chunks)} chunks")
                 except Exception as e:
-                    print(f"✗ Error processing {file_path}: {e}")
+                    logger.error(f"[ERROR] Error processing {file_path}: {e}")
             else:
-                print(f"⚡ Skipping {os.path.basename(file_path)} (unchanged)")
+                logger.info(f"[FAST] Skipping {os.path.basename(file_path)} (unchanged)")
                 # Load chunks for unchanged files while preserving metadata
                 try:
                     filename = os.path.basename(file_path)
@@ -253,12 +256,12 @@ class DocumentManager:
                     
                     # If JSON doesn't exist, load from PDF
                     if chunks is None:
-                        print(f"  📄 Loading from PDF (no cached chunks)")
+                        logger.debug(f"  [DOC] Loading from PDF (no cached chunks)")
                         chunks = load_and_chunk_pdf(file_path)
                         # Save to JSON for next time
                         self._save_chunks_to_json(filename, chunks)
                     else:
-                        print(f"  ⚡ Loaded from cached JSON")
+                        logger.debug(f"  [FAST] Loaded from cached JSON")
                     
                     # Add document info to chunks
                     for chunk in chunks:
@@ -294,7 +297,7 @@ class DocumentManager:
                     self.metadata["documents"][filename] = enhanced_metadata
                     
                 except Exception as e:
-                    print(f"✗ Error loading {file_path}: {e}")
+                    logger.error(f"[ERROR] Error loading {file_path}: {e}")
         
         # Update totals
         self.metadata["total_chunks"] = len(all_chunks)
@@ -303,7 +306,7 @@ class DocumentManager:
         # Save metadata
         self._save_metadata()
         
-        print(f"📚 Loaded {len(all_chunks)} total chunks from {self.metadata['total_documents']} documents")
+        logger.info(f"[LOAD] Loaded {len(all_chunks)} total chunks from {self.metadata['total_documents']} documents")
         
         return all_chunks
     

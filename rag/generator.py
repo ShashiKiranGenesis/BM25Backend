@@ -1,11 +1,15 @@
 from openai import AsyncOpenAI
 from typing import List, Dict
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _get_client() -> AsyncOpenAI:
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
+        logger.error("GROQ_API_KEY is not set")
         raise RuntimeError(
             "GROQ_API_KEY is not set. Make sure your .env file is present and load_dotenv() is called before importing this module."
         )
@@ -24,7 +28,7 @@ def build_prompt(question: str, chunks: List[Dict]) -> str:
         doc_metadata = chunk.get('document_metadata', {})
         
         # Build context with enhanced metadata
-        context_header = f"[📄 {chunk.get('source_file', 'Unknown')} | Page {chunk['page']}"
+        context_header = f"[DOC] {chunk.get('source_file', 'Unknown')} | Page {chunk['page']}"
         
         if metadata.get('word_count'):
             context_header += f" | {metadata['word_count']} words"
@@ -77,6 +81,8 @@ async def generate_answer(question: str, chunks: List[Dict]) -> str:
     Returns:
         LLM generated answer string
     """
+    logger.debug(f"Generating answer for question: '{question}' using {len(chunks)} chunks")
+    
     prompt = build_prompt(question, chunks)
 
     client = _get_client()
@@ -88,5 +94,6 @@ async def generate_answer(question: str, chunks: List[Dict]) -> str:
         temperature=0.2,
         max_tokens=512
     )
-    print(prompt)
-    return response.choices[0].message.content.strip()
+    answer = response.choices[0].message.content.strip()
+    logger.debug(f"Generated answer: {answer[:100]}...")
+    return answer

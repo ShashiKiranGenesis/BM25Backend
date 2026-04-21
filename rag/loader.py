@@ -1,6 +1,9 @@
 import fitz  # PyMuPDF
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, Dict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def load_and_chunk_pdf(file_path: str, chunk_size: int = 500, chunk_overlap: int = 50) -> List[Dict]:
@@ -11,6 +14,8 @@ def load_and_chunk_pdf(file_path: str, chunk_size: int = 500, chunk_overlap: int
     Returns:
         List of dicts: [{"text": ..., "page": ..., "metadata": {...}}, ...]
     """
+    logger.info(f"Loading and chunking PDF: {file_path}")
+    
     doc = fitz.open(file_path)
     
     # Extract document-level metadata
@@ -69,4 +74,5 @@ def load_and_chunk_pdf(file_path: str, chunk_size: int = 500, chunk_overlap: int
 
     doc.close()
 
+    logger.info(f"Loaded {len(all_chunks)} chunks from {len(doc)} pages")
     return all_chunks

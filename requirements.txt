@@ -8,4 +8,5 @@ flashrank
 langchain-text-splitters
 groq
 python-dotenv
- 
+openai
+logging
