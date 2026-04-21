@@ -9,3 +9,5 @@ langchain-text-splitters
 groq
 python-dotenv
 werkzeug
+chromadb
+sentence-transformers==3.4.1

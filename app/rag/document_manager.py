@@ -2,10 +2,13 @@ import os
 import json
 import hashlib
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, TYPE_CHECKING
 from pathlib import Path
 
 from .loader import load_and_chunk_pdf
+
+if TYPE_CHECKING:
+    from .vector_store import VectorStore
 
 METADATA_FILE = "MetaData.json"
 UPLOADS_DIR = "uploads"
@@ -19,6 +22,12 @@ class DocumentManager:
         self.chunks_dir = CHUNKS_DIR
         self.metadata = self._load_metadata()
         self._ensure_chunks_directory()
+        # Injected after construction to avoid circular imports
+        self._vector_store: Optional["VectorStore"] = None
+
+    def set_vector_store(self, vector_store: "VectorStore"):
+        """Attach a VectorStore instance so chunks are synced on processing."""
+        self._vector_store = vector_store
         
     def _ensure_chunks_directory(self):
         """Ensure chunks directory exists."""
@@ -215,10 +224,14 @@ class DocumentManager:
         # Save chunks to JSON file
         json_path = self._save_chunks_to_json(filename, chunks)
         enhanced_metadata["chunks_json_path"] = json_path
-        
+
+        # Sync to vector store if available
+        if self._vector_store is not None:
+            self._vector_store.upsert_chunks(chunks)
+
         # Update metadata
         self.metadata["documents"][filename] = enhanced_metadata
-        
+
         return chunks
     
     def load_all_documents(self) -> List[Dict]:

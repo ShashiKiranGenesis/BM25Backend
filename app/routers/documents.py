@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 
 from app.utils import get_logger
 from app.models import MetadataUpdateResponse, StatusResponse, UploadResponse
-from app.services import doc_manager, get_retriever, initialize_rag
+from app.services import doc_manager, get_retriever, get_vector_store, initialize_rag
 from config import UPLOADS_DIR
 
 logger = get_logger(__name__)
@@ -25,10 +25,13 @@ def get_status():
         )
 
     doc_info = doc_manager.get_document_info()
+    vs = get_vector_store()
+    vector_chunks = vs.count() if vs else 0
     logger.info(
-        "Status OK — %d documents, %d chunks",
+        "Status OK — %d documents, %d chunks, %d vector chunks",
         doc_info["total_documents"],
         doc_info["total_chunks"],
+        vector_chunks,
     )
     return StatusResponse(
         ready=True,
@@ -36,6 +39,7 @@ def get_status():
         total_chunks=doc_info["total_chunks"],
         last_updated=doc_info["last_updated"],
         documents=doc_info["documents"],
+        vector_chunks=vector_chunks,
     )
 
 

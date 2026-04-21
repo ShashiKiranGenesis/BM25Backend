@@ -10,8 +10,12 @@ router = APIRouter(tags=["Query"])
 
 @router.post("/ask", response_model=QueryResponse)
 async def ask_question(request: QueryRequest):
-    """Ask a question — runs BM25 retrieval → reranking → LLM generation."""
-    logger.info("POST /ask — question: %s", request.question[:100])
+    """Ask a question — runs BM25 retrieval (+ optional vector) → reranking → LLM generation."""
+    logger.info(
+        "POST /ask — use_vector=%s, question: %s",
+        request.use_vector,
+        request.question[:100],
+    )
 
     try:
         result = await run_rag_pipeline(
@@ -19,6 +23,7 @@ async def ask_question(request: QueryRequest):
             top_k=request.top_k,
             rerank_top_n=request.rerank_top_n,
             filter_files=request.filter_files,
+            use_vector=request.use_vector or False,
         )
 
         source_chunks = [

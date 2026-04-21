@@ -11,6 +11,7 @@ class QueryRequest(BaseModel):
     top_k: Optional[int] = 15
     rerank_top_n: Optional[int] = 5
     filter_files: Optional[List[str]] = None
+    use_vector: Optional[bool] = False
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +41,7 @@ class StatusResponse(BaseModel):
     total_chunks: Optional[int] = None
     last_updated: Optional[str] = None
     documents: Optional[dict] = None
+    vector_chunks: Optional[int] = None
 
 
 class UploadResponse(BaseModel):
