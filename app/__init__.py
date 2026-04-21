@@ -1,9 +1,30 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import APP_TITLE, APP_DESCRIPTION, APP_VERSION, ALLOWED_ORIGINS
+from app.utils import get_logger
 from app.routers import documents_router, query_router
 from app.services import initialize_rag
+
+logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──────────────────────────────────────────────────────────
+    logger.info("Starting up Vectorless RAG API v%s", APP_VERSION)
+    try:
+        initialize_rag()
+        logger.info("RAG system initialized successfully")
+    except Exception as e:
+        logger.error("Failed to initialize RAG system: %s", e)
+
+    yield  # app is running
+
+    # ── Shutdown ─────────────────────────────────────────────────────────
+    logger.info("Shutting down Vectorless RAG API")
 
 
 def create_app() -> FastAPI:
@@ -13,6 +34,7 @@ def create_app() -> FastAPI:
         title=APP_TITLE,
         description=APP_DESCRIPTION,
         version=APP_VERSION,
+        lifespan=lifespan,
     )
 
     # Middleware
@@ -28,10 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(documents_router)
     app.include_router(query_router)
 
-    # Startup
-    @app.on_event("startup")
-    async def startup_event():
-        initialize_rag()
+    logger.info("App created — routers registered")
 
     # Root
     @app.get("/")

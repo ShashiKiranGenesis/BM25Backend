@@ -21,3 +21,7 @@ METADATA_FILE: str = "MetaData.json"
 APP_TITLE: str = "Vectorless RAG API"
 APP_DESCRIPTION: str = "BM25 + Reranker + LLM — No vector database needed!"
 APP_VERSION: str = "2.0.0"
+
+# Logging
+LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+LOG_FORMAT: str = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"

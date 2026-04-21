@@ -1,14 +1,18 @@
 from fastapi import APIRouter, HTTPException
 
-from app.models import QueryRequest, QueryResponse, ChunkResult
+from app.utils import get_logger
+from app.models import ChunkResult, QueryRequest, QueryResponse
 from app.services import run_rag_pipeline
 
+logger = get_logger(__name__)
 router = APIRouter(tags=["Query"])
 
 
 @router.post("/ask", response_model=QueryResponse)
 async def ask_question(request: QueryRequest):
     """Ask a question — runs BM25 retrieval → reranking → LLM generation."""
+    logger.info("POST /ask — question: %s", request.question[:100])
+
     try:
         result = await run_rag_pipeline(
             question=request.question,
@@ -30,6 +34,10 @@ async def ask_question(request: QueryRequest):
             for chunk in result["source_chunks"]
         ]
 
+        logger.info(
+            "Question answered — %d source chunks returned",
+            len(source_chunks),
+        )
         return QueryResponse(
             question=request.question,
             answer=result["answer"],
@@ -37,8 +45,11 @@ async def ask_question(request: QueryRequest):
         )
 
     except ValueError as e:
+        logger.warning("Bad request for /ask: %s", e)
         raise HTTPException(status_code=400, detail=str(e))
     except LookupError as e:
+        logger.warning("No results for /ask: %s", e)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
+        logger.error("Unexpected error in /ask: %s", e)
         raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
