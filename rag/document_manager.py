@@ -9,14 +9,65 @@ from .loader import load_and_chunk_pdf
 
 METADATA_FILE = "MetaData.json"
 UPLOADS_DIR = "uploads"
+CHUNKS_DIR = "chunks"
 
 
 class DocumentManager:
     def __init__(self):
         self.metadata_file = METADATA_FILE
         self.uploads_dir = UPLOADS_DIR
+        self.chunks_dir = CHUNKS_DIR
         self.metadata = self._load_metadata()
+        self._ensure_chunks_directory()
         
+    def _ensure_chunks_directory(self):
+        """Ensure chunks directory exists."""
+        if not os.path.exists(self.chunks_dir):
+            os.makedirs(self.chunks_dir, exist_ok=True)
+            print(f"Created chunks directory: {self.chunks_dir}")
+    
+    def _save_chunks_to_json(self, filename: str, chunks: List[Dict]):
+        """Save document chunks to JSON file in chunks directory."""
+        # Create a safe filename (remove extension and special chars)
+        safe_filename = Path(filename).stem
+        safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in safe_filename)
+        
+        json_filename = f"{safe_filename}_chunks.json"
+        json_path = os.path.join(self.chunks_dir, json_filename)
+        
+        # Prepare chunks data with metadata
+        chunks_data = {
+            "document": filename,
+            "total_chunks": len(chunks),
+            "generated_at": datetime.now().isoformat(),
+            "chunks": chunks
+        }
+        
+        # Save to JSON file
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(chunks_data, f, indent=2, ensure_ascii=False)
+        
+        print(f"💾 Saved {len(chunks)} chunks to: {json_path}")
+        return json_path
+    
+    def _load_chunks_from_json(self, filename: str) -> Optional[List[Dict]]:
+        """Load document chunks from JSON file if it exists."""
+        safe_filename = Path(filename).stem
+        safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in safe_filename)
+        
+        json_filename = f"{safe_filename}_chunks.json"
+        json_path = os.path.join(self.chunks_dir, json_filename)
+        
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get("chunks", [])
+            except (json.JSONDecodeError, FileNotFoundError) as e:
+                print(f"⚠️  Error loading chunks from {json_path}: {e}")
+        
+        return None
+    
     def _ensure_enhanced_metadata(self, filename: str, doc_info: Dict) -> Dict:
         """Ensure document has all enhanced metadata fields."""
         defaults = {
@@ -161,6 +212,10 @@ class DocumentManager:
                 "date_uploaded": enhanced_metadata["date_uploaded"]
             }
         
+        # Save chunks to JSON file
+        json_path = self._save_chunks_to_json(filename, chunks)
+        enhanced_metadata["chunks_json_path"] = json_path
+        
         # Update metadata
         self.metadata["documents"][filename] = enhanced_metadata
         
@@ -190,10 +245,22 @@ class DocumentManager:
                 print(f"⚡ Skipping {os.path.basename(file_path)} (unchanged)")
                 # Load chunks for unchanged files while preserving metadata
                 try:
-                    chunks = load_and_chunk_pdf(file_path)
                     filename = os.path.basename(file_path)
                     stored_metadata = self.metadata["documents"][filename]
                     
+                    # Try to load from JSON first (faster)
+                    chunks = self._load_chunks_from_json(filename)
+                    
+                    # If JSON doesn't exist, load from PDF
+                    if chunks is None:
+                        print(f"  📄 Loading from PDF (no cached chunks)")
+                        chunks = load_and_chunk_pdf(file_path)
+                        # Save to JSON for next time
+                        self._save_chunks_to_json(filename, chunks)
+                    else:
+                        print(f"  ⚡ Loaded from cached JSON")
+                    
+                    # Add document info to chunks
                     for chunk in chunks:
                         chunk["source_file"] = filename
                         chunk["file_path"] = file_path

@@ -69,6 +69,10 @@ htmlcov/
 # Metadata (optional - uncomment if you don't want to track metadata)
 # MetaData.json
 
+# Chunks (optional - uncomment if you don't want to track chunk JSON files)
+# chunks/*.json
+# !chunks/.gitkeep
+
 # Logs
 *.log
 logs/

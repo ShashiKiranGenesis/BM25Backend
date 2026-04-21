@@ -26,6 +26,7 @@ This backend provides a lightweight RAG solution that:
 - 🎯 **Smart Reranking**: FlashRank reranker for improved relevance
 - 🤖 **LLM Generation**: Groq-powered answer generation
 - 📊 **Metadata Management**: Track document metadata (author, category, tags, etc.)
+- 💾 **Chunk Caching**: Save processed chunks as JSON for faster loading
 - 🔄 **Auto-refresh**: Reload documents from uploads directory
 - 🎛️ **Configurable**: Adjust top_k, rerank_top_n, and filter by files
 
@@ -37,7 +38,11 @@ backend/
 ├── requirements.txt        # Python dependencies
 ├── .env                    # Environment variables (API keys)
 ├── MetaData.json          # Document metadata storage
+├── chunks_utility.py      # Utility script for managing chunks
 ├── uploads/               # PDF documents directory
+├── chunks/                # JSON chunks cache directory
+│   ├── README.md          # Chunks documentation
+│   └── *.json             # Cached chunk files
 └── rag/
     ├── document_manager.py  # Document loading and metadata
     ├── loader.py           # PDF text extraction
@@ -249,6 +254,8 @@ Each document can have the following metadata:
 - Loads PDF documents from uploads directory
 - Manages document metadata
 - Tracks document changes and updates
+- **Saves chunks to JSON** for faster subsequent loads
+- **Loads from cached JSON** when documents haven't changed
 
 ### 2. Loader (`loader.py`)
 - Extracts text from PDF files using PyMuPDF
@@ -269,6 +276,42 @@ Each document can have the following metadata:
 - Generates answers using Groq LLM
 - Combines context from reranked chunks
 - Provides source attribution
+
+## Chunks Directory
+
+The `chunks/` directory stores processed PDF chunks in JSON format for performance optimization.
+
+### Benefits
+- **10-50x faster** loading for unchanged documents
+- **Caching**: Avoids re-processing PDFs on every restart
+- **Portability**: Chunks can be backed up or analyzed independently
+- **Debugging**: Easy to inspect extracted content
+
+### Management
+
+Use the included utility script:
+
+```bash
+# List all chunk files
+python chunks_utility.py list
+
+# Show detailed info about a document's chunks
+python chunks_utility.py info document_name
+
+# Search for text across all chunks
+python chunks_utility.py search "your query"
+
+# Show statistics
+python chunks_utility.py stats
+
+# Clear cache (force re-processing)
+python chunks_utility.py clear
+
+# Export chunks to readable text
+python chunks_utility.py export document_name
+```
+
+See `chunks/README.md` for more details.
 
 ## Dependencies
 
