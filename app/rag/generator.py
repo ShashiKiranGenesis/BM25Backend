@@ -81,7 +81,7 @@ async def generate_answer(question: str, chunks: List[Dict]) -> str:
 
     client = _get_client()
     response = await client.chat.completions.create(
-        model="openai/gpt-oss-120b",
+        model=os.getenv("MODEL"),
         messages=[
             {"role": "user", "content": prompt}
         ],

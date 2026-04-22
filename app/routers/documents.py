@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 
 from app.utils import get_logger
 from app.models import MetadataUpdateResponse, StatusResponse, UploadResponse
-from app.services import doc_manager, get_retriever, initialize_rag
+from app.services import doc_manager, get_retriever, initialize_rag, initialize_rag_with_new_file
 from config import UPLOADS_DIR
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ def get_status():
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_pdf(file: UploadFile = File(...)):
-    """Upload a PDF file and reinitialize the RAG system."""
+    """Upload a PDF file and add it to the RAG system (only processes the new file)."""
     logger.info("POST /upload — filename: %s", file.filename)
 
     if not file.filename.endswith(".pdf"):
@@ -60,17 +60,19 @@ async def upload_pdf(file: UploadFile = File(...)):
 
         logger.info("File saved to %s (%d bytes)", file_path, len(content))
 
-        initialize_rag()
+        # Process only the new file (efficient!)
+        new_chunks_count = initialize_rag_with_new_file(file_path)
 
         doc_info = doc_manager.get_document_info()
         logger.info(
-            "Upload complete — %d documents, %d chunks",
+            "Upload complete — %d documents, %d chunks (%d new)",
             doc_info["total_documents"],
             doc_info["total_chunks"],
+            new_chunks_count
         )
         return UploadResponse(
             success=True,
-            message="PDF uploaded successfully!",
+            message=f"PDF uploaded successfully! Created {new_chunks_count} new chunks.",
             filename=filename,
             total_documents=doc_info["total_documents"],
             total_chunks=doc_info["total_chunks"],
@@ -83,20 +85,22 @@ async def upload_pdf(file: UploadFile = File(...)):
 
 @router.post("/refresh", response_model=UploadResponse)
 def refresh_documents():
-    """Reload all documents from the uploads directory."""
-    logger.info("POST /refresh")
+    """Reload all documents from the uploads directory (recreates all chunks)."""
+    logger.info("POST /refresh — FORCE REPROCESS ALL")
 
     try:
-        initialize_rag()
+        # Force reprocess all documents
+        initialize_rag(force_reprocess=True)
+        
         doc_info = doc_manager.get_document_info()
         logger.info(
-            "Refresh complete — %d documents, %d chunks",
+            "Refresh complete — %d documents, %d chunks (all recreated)",
             doc_info["total_documents"],
             doc_info["total_chunks"],
         )
         return UploadResponse(
             success=True,
-            message="Documents refreshed successfully!",
+            message="Documents refreshed successfully! All chunks recreated.",
             total_documents=doc_info["total_documents"],
             total_chunks=doc_info["total_chunks"],
         )
