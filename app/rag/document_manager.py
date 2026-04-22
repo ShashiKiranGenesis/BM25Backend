@@ -107,7 +107,7 @@ class DocumentManager:
             "total_chunks": 0,
             "total_documents": 0
         }
-    
+
     def _save_metadata(self):
         """Save metadata to JSON file."""
         self.metadata["last_updated"] = datetime.now().isoformat()
@@ -224,8 +224,56 @@ class DocumentManager:
         
         return chunks
     
-    def load_all_documents(self) -> List[Dict]:
-        """Load and process all documents, returning combined chunks."""
+    def process_single_file(self, file_path: str, additional_metadata: Dict = None) -> List[Dict]:
+        """
+        Process a single new file and return its chunks.
+        Used when uploading a new PDF - only processes that file.
+        
+        Args:
+            file_path: Path to the PDF file
+            additional_metadata: Optional metadata to attach
+            
+        Returns:
+            List of chunks for this file only
+        """
+        filename = os.path.basename(file_path)
+        logger.info(f"📝 Processing single file: {filename}")
+        
+        try:
+            # Process the document
+            chunks = self.process_document(file_path, additional_metadata)
+            
+            # Update totals (need to count all files)
+            pdf_files = self.scan_uploads_directory()
+            self.metadata["total_documents"] = len(pdf_files)
+            
+            # Recalculate total chunks from all documents
+            total_chunks = sum(
+                doc.get("chunks_count", 0) 
+                for doc in self.metadata["documents"].values()
+            )
+            self.metadata["total_chunks"] = total_chunks
+            
+            # Save metadata
+            self._save_metadata()
+            
+            logger.info(f"✅ Processed {filename}: {len(chunks)} chunks")
+            logger.info(f"📊 Total: {self.metadata['total_documents']} documents, {self.metadata['total_chunks']} chunks")
+            
+            return chunks
+            
+        except Exception as e:
+            logger.error(f"❌ Error processing {filename}: {e}")
+            raise
+    
+    def load_all_documents(self, force_reprocess: bool = False) -> List[Dict]:
+        """
+        Load and process all documents, returning combined chunks.
+        
+        Args:
+            force_reprocess: If True, recreate all chunks (used by refresh).
+                           If False, use cached chunks when available (default).
+        """
         pdf_files = self.scan_uploads_directory()
         all_chunks = []
         
@@ -237,31 +285,30 @@ class DocumentManager:
         
         # Process each file
         for file_path in pdf_files:
-            if self.needs_processing(file_path):
+            filename = os.path.basename(file_path)
+            
+            # Check if we should use cached chunks
+            chunks_exist = self._load_chunks_from_json(filename) is not None
+            
+            if force_reprocess:
+                # REFRESH: Always recreate chunks
+                logger.info(f"⚡ Reprocessing {filename} (forced)")
                 try:
                     chunks = self.process_document(file_path)
                     all_chunks.extend(chunks)
-                    logger.info(f"Processed {os.path.basename(file_path)}: {len(chunks)} chunks")
+                    logger.info(f"✅ Recreated {len(chunks)} chunks")
                 except Exception as e:
-                    logger.error(f"Error processing {file_path}: {e}")
-            else:
-                logger.info(f"Skipping {os.path.basename(file_path)} (unchanged)")
-                # Load chunks for unchanged files while preserving metadata
+                    logger.error(f"❌ Error reprocessing {file_path}: {e}")
+                    
+            elif chunks_exist and not self.needs_processing(file_path):
+                # CACHED: Chunks exist and file unchanged
+                logger.info(f"⚡ Skipping {filename} (unchanged)")
                 try:
-                    filename = os.path.basename(file_path)
-                    stored_metadata = self.metadata["documents"][filename]
+                    stored_metadata = self.metadata["documents"].get(filename, {})
                     
-                    # Try to load from JSON first (faster)
+                    # Load from cached JSON
                     chunks = self._load_chunks_from_json(filename)
-                    
-                    # If JSON doesn't exist, load from PDF
-                    if chunks is None:
-                        logger.info(f"Loading from PDF (no cached chunks)")
-                        chunks = load_and_chunk_pdf(file_path)
-                        # Save to JSON for next time
-                        self._save_chunks_to_json(filename, chunks)
-                    else:
-                        logger.info(f"Loaded from cached JSON")
+                    logger.info(f"  ⚡ Loaded from cached JSON")
                     
                     # Add document info to chunks
                     for chunk in chunks:
@@ -278,14 +325,9 @@ class DocumentManager:
                         }
                     all_chunks.extend(chunks)
                     
-                    # Ensure metadata is preserved and not overwritten
-                    # Only update file info, keep enhanced metadata
+                    # Preserve existing metadata
                     current_file_info = self._get_file_info(file_path)
-                    
-                    # Preserve existing enhanced metadata
                     enhanced_metadata = self._ensure_enhanced_metadata(filename, stored_metadata)
-                    
-                    # Update with current file info
                     enhanced_metadata.update({
                         "size": current_file_info["size"],
                         "modified": current_file_info["modified"],
@@ -293,11 +335,31 @@ class DocumentManager:
                         "chunks_count": len(chunks),
                         "file_path": file_path
                     })
-                    
                     self.metadata["documents"][filename] = enhanced_metadata
                     
                 except Exception as e:
-                    logger.error(f"Error loading {file_path}: {e}")
+                    logger.error(f"❌ Error loading cached chunks for {file_path}: {e}")
+                    # Fallback: process the document
+                    logger.info(f"  ⚡ Falling back to processing")
+                    try:
+                        chunks = self.process_document(file_path)
+                        all_chunks.extend(chunks)
+                    except Exception as e2:
+                        logger.error(f"❌ Fallback processing also failed: {e2}")
+                        
+            else:
+                # NEW/CHANGED: No cached chunks or file changed
+                if chunks_exist:
+                    logger.info(f"📝 Processing {filename} (file changed)")
+                else:
+                    logger.info(f"📝 Processing {filename} (new file)")
+                    
+                try:
+                    chunks = self.process_document(file_path)
+                    all_chunks.extend(chunks)
+                    logger.info(f"✅ Created {len(chunks)} chunks")
+                except Exception as e:
+                    logger.error(f"❌ Error processing {file_path}: {e}")
         
         # Update totals
         self.metadata["total_chunks"] = len(all_chunks)
@@ -306,7 +368,7 @@ class DocumentManager:
         # Save metadata
         self._save_metadata()
         
-        logger.info(f"Loaded {len(all_chunks)} total chunks from {self.metadata['total_documents']} documents")
+        logger.info(f"📚 Loaded {len(all_chunks)} total chunks from {self.metadata['total_documents']} documents")
         
         return all_chunks
     

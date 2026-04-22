@@ -16,15 +16,27 @@ reranker = FlashReranker()
 retriever: Optional[BM25Retriever] = None
 
 
-def initialize_rag():
+def initialize_rag(force_reprocess: bool = False):
     """
     Load all documents and build the BM25 index.
-    Called once on startup and again after upload/refresh.
+    
+    Args:
+        force_reprocess: If True, recreate all chunks (used by refresh).
+                        If False, use cached chunks when available (default).
+    
+    Called:
+        - Once on startup (force_reprocess=False)
+        - After refresh (force_reprocess=True)
+        - After upload (force_reprocess=False, only new file processed)
     """
     global retriever
 
-    logger.info("Initializing RAG system...")
-    all_chunks = doc_manager.load_all_documents()
+    if force_reprocess:
+        logger.info("Initializing RAG system (FORCE REPROCESS - recreating all chunks)...")
+    else:
+        logger.info("Initializing RAG system...")
+        
+    all_chunks = doc_manager.load_all_documents(force_reprocess=force_reprocess)
 
     if all_chunks:
         retriever = BM25Retriever(all_chunks)
@@ -32,6 +44,36 @@ def initialize_rag():
     else:
         logger.warning("No documents loaded. Add PDF files to uploads/ directory.")
         retriever = None
+
+
+def initialize_rag_with_new_file(file_path: str) -> int:
+    """
+    Process a single new file and add it to the existing RAG system.
+    More efficient than reprocessing all files.
+    
+    Args:
+        file_path: Path to the newly uploaded PDF
+        
+    Returns:
+        Number of chunks in the new file
+    """
+    global retriever
+    
+    logger.info("Adding new file to RAG system: %s", file_path)
+    
+    # Process only the new file
+    new_chunks = doc_manager.process_single_file(file_path)
+    
+    # Reload all chunks (but most will be from cache)
+    all_chunks = doc_manager.load_all_documents(force_reprocess=False)
+    
+    # Rebuild retriever with all chunks
+    if all_chunks:
+        retriever = BM25Retriever(all_chunks)
+        logger.info("RAG system updated — %d total chunks (%d new)", 
+                   len(all_chunks), len(new_chunks))
+    
+    return len(new_chunks)
 
 
 def get_retriever() -> Optional[BM25Retriever]:
