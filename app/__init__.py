@@ -1,7 +1,9 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import APP_TITLE, APP_DESCRIPTION, APP_VERSION, ALLOWED_ORIGINS
 from app.utils import get_logger
@@ -52,9 +54,26 @@ def create_app() -> FastAPI:
 
     logger.info("App created — routers registered")
 
-    # Root
-    @app.get("/")
-    def root():
+    # ── Exception Handlers ───────────────────────────────────────────────
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 404:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "message": f"The endpoint '{request.url.path}' does not exist",
+                    "method": request.method,
+                    "path": request.url.path,
+                },
+            )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"error": exc.detail},
+        )
+
+    # Health
+    @app.get("/health")
+    def health():
         return {
             "message": "Vectorless RAG API is running!",
             "version": APP_VERSION,
