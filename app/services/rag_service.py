@@ -46,13 +46,14 @@ def initialize_rag(force_reprocess: bool = False):
         retriever = None
 
 
-def initialize_rag_with_new_file(file_path: str) -> int:
+def initialize_rag_with_new_file(file_path: str, additional_metadata: dict = None) -> int:
     """
     Process a single new file and add it to the existing RAG system.
     More efficient than reprocessing all files.
     
     Args:
         file_path: Path to the newly uploaded PDF
+        additional_metadata: Optional metadata to attach to the document
         
     Returns:
         Number of chunks in the new file
@@ -62,7 +63,7 @@ def initialize_rag_with_new_file(file_path: str) -> int:
     logger.info("Adding new file to RAG system: %s", file_path)
     
     # Process only the new file
-    new_chunks = doc_manager.process_single_file(file_path)
+    new_chunks = doc_manager.process_single_file(file_path, additional_metadata)
     
     # Reload all chunks (but most will be from cache)
     all_chunks = doc_manager.load_all_documents(force_reprocess=False)

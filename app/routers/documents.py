@@ -5,8 +5,16 @@ from werkzeug.utils import secure_filename
 
 from app.utils import get_logger
 from app.models import MetadataUpdateResponse, StatusResponse, UploadResponse
-from app.services import doc_manager, get_retriever, initialize_rag, initialize_rag_with_new_file
+from app.models import FileUploadRequest
+from app.services import (
+    doc_manager,
+    get_retriever,
+    initialize_rag,
+    initialize_rag_with_new_file,
+)
 from config import UPLOADS_DIR
+from fastapi import Depends
+
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["Documents"])
@@ -38,14 +46,19 @@ def get_status():
         documents=doc_info["documents"],
     )
 
-
 @router.post("/", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)):
-    """Upload a PDF file and add it to the RAG system (only processes the new file)."""
-    logger.info("POST /upload — filename: %s", file.filename)
+async def upload_pdf(
+    file: UploadFile = File(...),
+    metadata: FileUploadRequest = Depends(FileUploadRequest.as_form),
+):
+    logger.info(
+        "POST /upload — filename: %s, category: %s, department: %s",
+        file.filename,
+        metadata.category,
+        metadata.department,
+    )
 
     if not file.filename.endswith(".pdf"):
-        logger.warning("Upload rejected — not a PDF: %s", file.filename)
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     try:
@@ -54,22 +67,22 @@ async def upload_pdf(file: UploadFile = File(...)):
 
         os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+        contents = await file.read()
         with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
+            f.write(contents)
 
-        logger.info("File saved to %s (%d bytes)", file_path, len(content))
-
-        # Process only the new file (efficient!)
-        new_chunks_count = initialize_rag_with_new_file(file_path)
-
+        # Convert metadata to dict for storage
+        metadata_dict = {
+            "category": metadata.category,
+            "department": metadata.department,
+            "doc_type": metadata.document_type,
+            "version": metadata.version,
+            "description": metadata.description or f"Uploaded document: {filename}",
+        }
+        
+        new_chunks_count = initialize_rag_with_new_file(file_path, metadata_dict)
         doc_info = doc_manager.get_document_info()
-        logger.info(
-            "Upload complete — %d documents, %d chunks (%d new)",
-            doc_info["total_documents"],
-            doc_info["total_chunks"],
-            new_chunks_count
-        )
+
         return UploadResponse(
             success=True,
             message=f"PDF uploaded successfully! Created {new_chunks_count} new chunks.",
@@ -91,7 +104,7 @@ def refresh_documents():
     try:
         # Force reprocess all documents
         initialize_rag(force_reprocess=True)
-        
+
         doc_info = doc_manager.get_document_info()
         logger.info(
             "Refresh complete — %d documents, %d chunks (all recreated)",
@@ -106,7 +119,9 @@ def refresh_documents():
         )
     except Exception as e:
         logger.error("Refresh failed: %s", e)
-        raise HTTPException(status_code=500, detail=f"Error refreshing documents: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error refreshing documents: {str(e)}"
+        )
 
 
 @router.put("/{filename}", response_model=MetadataUpdateResponse)
@@ -117,7 +132,9 @@ def update_metadata(filename: str, metadata: dict):
     try:
         if doc_manager.update_document_metadata(filename, metadata):
             logger.info("Metadata updated for %s", filename)
-            return MetadataUpdateResponse(success=True, message="Metadata updated successfully")
+            return MetadataUpdateResponse(
+                success=True, message="Metadata updated successfully"
+            )
         logger.warning("Metadata update failed — document not found: %s", filename)
         raise HTTPException(status_code=404, detail="Document not found")
     except HTTPException:

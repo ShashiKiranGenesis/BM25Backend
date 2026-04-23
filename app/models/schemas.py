@@ -1,5 +1,8 @@
 # Re-export schemas from individual modules for backward compatibility
-from .requests import QueryRequest
+from .requests import (
+    QueryRequest,
+    FileUploadRequest
+)
 from .responses import (
     ChunkResult,
     QueryResponse,
@@ -10,6 +13,7 @@ from .responses import (
 
 __all__ = [
     "QueryRequest",
+    "FileUploadRequest",
     "ChunkResult",
     "QueryResponse",
     "StatusResponse",

@@ -1,5 +1,6 @@
 from .schemas import (
     QueryRequest,
+    FileUploadRequest,
     QueryResponse,
     ChunkResult,
     StatusResponse,
