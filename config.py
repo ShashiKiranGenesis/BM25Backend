@@ -15,7 +15,7 @@ ALLOWED_ORIGINS: list = [
 # Directories
 UPLOADS_DIR: str = "uploads"
 CHUNKS_DIR: str = "chunks"
-METADATA_FILE: str = "MetaData.json"
+METADATA_FILE: str = "metadata.json"
 
 # App info
 APP_TITLE: str = "Vectorless RAG API"

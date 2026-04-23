@@ -62,16 +62,16 @@ dmypy.json
 .coverage
 htmlcov/
 
-# Uploads (optional - uncomment if you don't want to track uploaded files)
-# uploads/*.pdf
-# !uploads/.gitkeep
+# Uploads
+uploads/
+!uploads/.gitkeep
 
-# Metadata (optional - uncomment if you don't want to track metadata)
-# MetaData.json
+# Metadata
+metadata.json
 
-# Chunks (optional - uncomment if you don't want to track chunk JSON files)
-# chunks/*.json
-# !chunks/.gitkeep
+# Chunks
+chunks/
+!chunks/.gitkeep
 
 # Logs
 *.log

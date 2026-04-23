@@ -10,7 +10,7 @@ from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-METADATA_FILE = "MetaData.json"
+METADATA_FILE = "metadata.json"
 UPLOADS_DIR = "uploads"
 CHUNKS_DIR = "chunks"
 
