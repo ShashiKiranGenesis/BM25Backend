@@ -11,10 +11,12 @@ class QueryRequest(BaseModel):
     rerank_top_n: Optional[int] = 5
     filter_files: Optional[List[str]] = None
 
+
 class FileUploadRequest(BaseModel):
     category: Literal["HR", "Finance", "IT", "Operations"]
     department: Literal["Engineering", "Sales", "Marketing", "Support"]
     document_type: Literal["Policy", "SOP", "Runbook"]
+    region: Literal["United States", "European Union", "Asia-Specific"]
     version: str
     description: Optional[str] = None
 
@@ -24,6 +26,7 @@ class FileUploadRequest(BaseModel):
         category: Literal["HR", "Finance", "IT", "Operations"] = Form(...),
         department: Literal["Engineering", "Sales", "Marketing", "Support"] = Form(...),
         document_type: Literal["Policy", "SOP", "Runbook"] = Form(...),
+        region: Literal["United States", "European Union", "Asia-Specific"] = Form(...),
         version: str = Form(...),
         description: Optional[str] = Form(None),
     ):
@@ -31,6 +34,7 @@ class FileUploadRequest(BaseModel):
             category=category,
             department=department,
             document_type=document_type,
+            region=region,
             version=version,
             description=description,
         )
