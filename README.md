@@ -34,21 +34,33 @@ This backend provides a lightweight RAG solution that:
 
 ```
 backend/
-├── main.py                 # FastAPI application and routes
+├── config.py               # Configuration settings
 ├── requirements.txt        # Python dependencies
 ├── .env                    # Environment variables (API keys)
-├── MetaData.json          # Document metadata storage
-├── chunks_utility.py      # Utility script for managing chunks
-├── uploads/               # PDF documents directory
-├── chunks/                # JSON chunks cache directory
-│   ├── README.md          # Chunks documentation
-│   └── *.json             # Cached chunk files
-└── rag/
-    ├── document_manager.py  # Document loading and metadata
-    ├── loader.py           # PDF text extraction
-    ├── retriever.py        # BM25 retrieval implementation
-    ├── reranker.py         # FlashRank reranking
-    └── generator.py        # LLM answer generation
+├── metadata.json          # Document metadata storage
+├── data/                   # Central data directory
+│   ├── docs/              # Original PDF documents
+│   │   └── *.pdf          # PDF files
+│   ├── extracted_text/    # Extracted text from PDFs
+│   ├── chunks/            # JSON chunks cache directory
+│   │   ├── README.md      # Chunks documentation
+│   │   └── *.json         # Cached chunk files
+│   ├── indexes/           # Index data (future use)
+│   └── catalog/           # Catalog information
+├── app/
+│   ├── __init__.py
+│   ├── models/            # Data models and schemas
+│   ├── rag/
+│   │   ├── document_manager.py  # Document loading and metadata
+│   │   ├── loader.py           # PDF text extraction
+│   │   ├── retriever.py        # BM25 retrieval implementation
+│   │   ├── reranker.py         # FlashRank reranking
+│   │   ├── generator.py        # LLM answer generation
+│   │   └── __init__.py
+│   ├── routers/           # API route handlers
+│   ├── services/          # Business logic services
+│   └── utils/             # Utility functions
+└── server.py              # FastAPI server entry point
 ```
 
 ## Installation

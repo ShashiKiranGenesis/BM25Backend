@@ -11,8 +11,8 @@ from app.utils.logger import get_logger
 logger = get_logger(__name__)
 
 METADATA_FILE = "metadata.json"
-UPLOADS_DIR = "uploads"
-CHUNKS_DIR = "chunks"
+UPLOADS_DIR = "data/docs"
+CHUNKS_DIR = "data/chunks"
 
 
 class DocumentManager:

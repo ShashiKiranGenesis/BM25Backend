@@ -62,16 +62,20 @@ dmypy.json
 .coverage
 htmlcov/
 
-# Uploads
-uploads/
-!uploads/.gitkeep
+# Data directories (documents, chunks, extracted text, indexes, catalog)
+data/docs/*.pdf
+!data/docs/.gitkeep
+data/extracted_text/*
+!data/extracted_text/.gitkeep
+data/chunks/*.json
+!data/chunks/.gitkeep
+data/indexes/*
+!data/indexes/.gitkeep
+data/catalog/*
+!data/catalog/.gitkeep
 
 # Metadata
 metadata.json
-
-# Chunks
-chunks/
-!chunks/.gitkeep
 
 # Logs
 *.log

@@ -13,8 +13,8 @@ ALLOWED_ORIGINS: list = [
 ]
 
 # Directories
-UPLOADS_DIR: str = "uploads"
-CHUNKS_DIR: str = "chunks"
+UPLOADS_DIR: str = "data/docs"
+CHUNKS_DIR: str = "data/chunks"
 METADATA_FILE: str = "metadata.json"
 
 # App info
