@@ -14,6 +14,7 @@ from app.services import (
 )
 from config import UPLOADS_DIR
 from fastapi import Depends
+from datetime import datetime
 
 
 logger = get_logger(__name__)
@@ -46,6 +47,7 @@ def get_status():
         documents=doc_info["documents"],
     )
 
+
 @router.post("/", response_model=UploadResponse)
 async def upload_pdf(
     file: UploadFile = File(...),
@@ -60,7 +62,7 @@ async def upload_pdf(
 
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
-
+    uploaded_date = datetime.utcnow()
     try:
         filename = secure_filename(file.filename)
         file_path = os.path.join(UPLOADS_DIR, filename)
@@ -78,8 +80,10 @@ async def upload_pdf(
             "doc_type": metadata.document_type,
             "version": metadata.version,
             "description": metadata.description or f"Uploaded document: {filename}",
+            "effective_date": metadata.effective_date.isoformat(),
+            "uploaded_date": uploaded_date.isoformat(),
         }
-        
+
         new_chunks_count = initialize_rag_with_new_file(file_path, metadata_dict)
         doc_info = doc_manager.get_document_info()
 

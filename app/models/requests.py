@@ -3,7 +3,7 @@ from typing import List, Optional, Literal
 from typing import Optional, Literal
 from fastapi import UploadFile
 from fastapi import Form
-
+from datetime import date
 
 class QueryRequest(BaseModel):
     question: str
@@ -18,6 +18,7 @@ class FileUploadRequest(BaseModel):
     document_type: Literal["Policy", "SOP", "Runbook"]
     region: Literal["United States", "European Union", "Asia-Specific"]
     version: str
+    effective_date: date
     description: Optional[str] = None
 
     @classmethod
@@ -28,6 +29,7 @@ class FileUploadRequest(BaseModel):
         document_type: Literal["Policy", "SOP", "Runbook"] = Form(...),
         region: Literal["United States", "European Union", "Asia-Specific"] = Form(...),
         version: str = Form(...),
+        effective_date: date = Form(...),
         description: Optional[str] = Form(None),
     ):
         return cls(
@@ -36,5 +38,6 @@ class FileUploadRequest(BaseModel):
             document_type=document_type,
             region=region,
             version=version,
+            effective_date=effective_date,
             description=description,
         )
