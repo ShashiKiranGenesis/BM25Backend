@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["Documents"])
 
 
-@router.get("/status", response_model=StatusResponse)
+@router.get("/", response_model=StatusResponse)
 def get_status():
     """Check system status and loaded document information."""
     logger.info("GET /status")
@@ -39,7 +39,7 @@ def get_status():
     )
 
 
-@router.post("/upload", response_model=UploadResponse)
+@router.post("/", response_model=UploadResponse)
 async def upload_pdf(file: UploadFile = File(...)):
     """Upload a PDF file and add it to the RAG system (only processes the new file)."""
     logger.info("POST /upload — filename: %s", file.filename)
@@ -109,7 +109,7 @@ def refresh_documents():
         raise HTTPException(status_code=500, detail=f"Error refreshing documents: {str(e)}")
 
 
-@router.put("/metadata/{filename}", response_model=MetadataUpdateResponse)
+@router.put("/{filename}", response_model=MetadataUpdateResponse)
 def update_metadata(filename: str, metadata: dict):
     """Update metadata for a specific document."""
     logger.info("PUT /metadata/%s", filename)

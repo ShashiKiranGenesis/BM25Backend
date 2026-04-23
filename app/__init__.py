@@ -49,27 +49,27 @@ def create_app() -> FastAPI:
     )
 
     # Routers
-    app.include_router(documents_router)
-    app.include_router(query_router)
+    app.include_router(documents_router, prefix="/v1/documents")
+    app.include_router(query_router, prefix="/v1/query")
 
     logger.info("App created — routers registered")
 
     # ── Exception Handlers ───────────────────────────────────────────────
-    @app.exception_handler(StarletteHTTPException)
-    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-        if exc.status_code == 404:
-            return JSONResponse(
-                status_code=404,
-                content={
-                    "message": f"The endpoint '{request.url.path}' does not exist",
-                    "method": request.method,
-                    "path": request.url.path,
-                },
-            )
-        return JSONResponse(
-            status_code=exc.status_code,
-            content={"error": exc.detail},
-        )
+    # @app.exception_handler(StarletteHTTPException)
+    # async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    #     if exc.status_code == 404:
+    #         return JSONResponse(
+    #             status_code=404,
+    #             content={
+    #                 "message": f"The endpoint '{request.url.path}' does not exist",
+    #                 "method": request.method,
+    #                 "path": request.url.path,
+    #             },
+    #         )
+    #     return JSONResponse(
+    #         status_code=exc.status_code,
+    #         content={"error": exc.detail},
+    #     )
 
     # Health
     @app.get("/health")
@@ -78,7 +78,13 @@ def create_app() -> FastAPI:
             "message": "Vectorless RAG API is running!",
             "version": APP_VERSION,
             "docs": "/docs",
-            "endpoints": ["/status", "/upload", "/refresh", "/ask", "/metadata/{filename}"],
+            "endpoints": [
+                "GET /v1/documents - get status",
+                "POST /v1/documents - upload PDF",
+                "POST /v1/documents/refresh - refresh all documents",
+                "PUT /v1/documents/{filename} - update metadata",
+                "POST /v1/query - ask question",
+            ],
         }
 
     return app

@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["Query"])
 
 
-@router.post("/ask", response_model=QueryResponse)
+@router.post("/", response_model=QueryResponse)
 async def ask_question(request: QueryRequest):
     """Ask a question — runs BM25 retrieval → reranking → LLM generation."""
     logger.info("POST /ask — question: %s", request.question[:100])
