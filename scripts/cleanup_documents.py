@@ -25,6 +25,7 @@ PROJECT_ROOT = SCRIPT_DIR.parent  # Go up one level from scripts/
 # Configuration - use absolute paths
 UPLOADS_DIR = str(PROJECT_ROOT / "data" / "docs")
 CHUNKS_DIR = str(PROJECT_ROOT / "data" / "chunks")
+EXTRACTED_TEXT_DIR = str(PROJECT_ROOT / "data" / "extracted_text")
 METADATA_FILE = str(PROJECT_ROOT / "metadata.json")
 
 
@@ -111,8 +112,7 @@ def cleanup_rag_system():
     print("="*70)
     print(f"\n⚠️  WARNING: This will delete ALL uploaded documents and data!")
     print(f"    - PDF files from: {UPLOADS_DIR}")
-    print(f"    - Chunk files from: {CHUNKS_DIR}")
-    print(f"    - Reset metadata file: {METADATA_FILE}")
+    print(f"    - Chunk files from: {CHUNKS_DIR}")    print(f"    - Extracted text files from: {EXTRACTED_TEXT_DIR}")    print(f"    - Reset metadata file: {METADATA_FILE}")
     
     response = input("\n❓ Are you sure you want to continue? (yes/no): ").strip().lower()
     
@@ -127,6 +127,7 @@ def cleanup_rag_system():
     stats = {
         "pdfs_deleted": 0,
         "chunks_deleted": 0,
+        "extracted_text_deleted": 0,
         "metadata_reset": False,
         "errors": 0
     }
@@ -135,6 +136,7 @@ def cleanup_rag_system():
     logger["info"](f"Current state:")
     logger["info"](f"  PDF files in {UPLOADS_DIR}: {count_files(UPLOADS_DIR)}")
     logger["info"](f"  Chunk files in {CHUNKS_DIR}: {count_files(CHUNKS_DIR)}")
+    logger["info"](f"  Extracted text files in {EXTRACTED_TEXT_DIR}: {count_files(EXTRACTED_TEXT_DIR)}")
     
     print()
     
@@ -160,6 +162,17 @@ def cleanup_rag_system():
     
     print()
     
+    # Delete extracted text files
+    logger["info"](f"Deleting extracted text files from {EXTRACTED_TEXT_DIR}...")
+    deleted = delete_directory_contents(EXTRACTED_TEXT_DIR, ".txt")
+    if deleted >= 0:
+        stats["extracted_text_deleted"] = deleted
+        logger["success"](f"Deleted {deleted} extracted text file(s)")
+    else:
+        stats["errors"] += 1
+    
+    print()
+    
     # Reset metadata
     logger["info"](f"Resetting {METADATA_FILE}...")
     if reset_metadata():
@@ -171,9 +184,10 @@ def cleanup_rag_system():
     print("\n" + "-"*70)
     print("CLEANUP SUMMARY")
     print("-"*70)
-    print(f"✓ PDF files deleted:     {stats['pdfs_deleted']}")
-    print(f"✓ Chunk files deleted:   {stats['chunks_deleted']}")
-    print(f"✓ Metadata reset:        {'Yes' if stats['metadata_reset'] else 'No'}")
+    print(f"✓ PDF files deleted:           {stats['pdfs_deleted']}")
+    print(f"✓ Chunk files deleted:         {stats['chunks_deleted']}")
+    print(f"✓ Extracted text files deleted: {stats['extracted_text_deleted']}")
+    print(f"✓ Metadata reset:              {'Yes' if stats['metadata_reset'] else 'No'}")
     if stats["errors"] > 0:
         print(f"✗ Errors encountered:    {stats['errors']}")
     
