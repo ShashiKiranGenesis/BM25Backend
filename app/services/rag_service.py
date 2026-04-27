@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from app.utils import get_logger
 from app.rag.document_manager import DocumentManager
@@ -86,10 +86,10 @@ async def run_rag_pipeline(
     question: str,
     top_k: int = 15,
     rerank_top_n: int = 5,
-    category: Optional[str] = None,
-    department: Optional[str] = None,
-    doc_type: Optional[str] = None,
-    region: Optional[str] = None,
+    category: Optional[Union[str, List[str]]] = None,
+    department: Optional[Union[str, List[str]]] = None,
+    doc_type: Optional[Union[str, List[str]]] = None,
+    region: Optional[Union[str, List[str]]] = None,
 ) -> Dict:
     """
     Full RAG pipeline:
@@ -105,16 +105,31 @@ async def run_rag_pipeline(
 
     logger.info("Running RAG pipeline for question: %s", question[:100])
 
+    def _process_filter(val: Optional[Union[str, List[str]]]) -> Optional[List[str]]:
+        if not val:
+            return None
+        if isinstance(val, str):
+            clean = val.strip()
+            return [clean] if clean and clean.lower() != "string" else None
+        if isinstance(val, list):
+            clean = [v.strip() for v in val if isinstance(v, str) and v.strip() and v.lower() != "string"]
+            return clean if clean else None
+        return None
+
     # Build metadata filters - only include non-empty values
     metadata_filters = {}
-    if category and category.strip() and category.lower() != "string":
-        metadata_filters["category"] = category
-    if department and department.strip() and department.lower() != "string":
-        metadata_filters["department"] = department
-    if doc_type and doc_type.strip() and doc_type.lower() != "string":
-        metadata_filters["doc_type"] = doc_type
-    if region and region.strip() and region.lower() != "string":
-        metadata_filters["region"] = region
+    
+    cat_filter = _process_filter(category)
+    if cat_filter: metadata_filters["category"] = cat_filter
+    
+    dept_filter = _process_filter(department)
+    if dept_filter: metadata_filters["department"] = dept_filter
+    
+    type_filter = _process_filter(doc_type)
+    if type_filter: metadata_filters["doc_type"] = type_filter
+    
+    reg_filter = _process_filter(region)
+    if reg_filter: metadata_filters["region"] = reg_filter
 
     # Step 1 — BM25 Retrieval
     bm25_results = retriever.retrieve(question, top_k=top_k, metadata_filters=metadata_filters)

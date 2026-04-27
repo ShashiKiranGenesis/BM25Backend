@@ -52,7 +52,7 @@ class BM25Retriever:
                 before_count = len(scored_chunks)
                 scored_chunks = [
                     c for c in scored_chunks
-                    if c.get("document_metadata", {}).get(key) == value
+                    if c.get("document_metadata", {}).get(key) in value
                 ]
                 after_count = len(scored_chunks)
                 # Debug: log actual values in chunks

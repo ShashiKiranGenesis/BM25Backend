@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Union
 from datetime import datetime
 from fastapi import UploadFile, Form
 from datetime import date
@@ -8,10 +8,10 @@ class QueryRequest(BaseModel):
     question: str
     top_k: Optional[int] = 15
     rerank_top_n: Optional[int] = 5
-    category: Optional[str] = None
-    department: Optional[str] = None
-    doc_type: Optional[str] = None
-    region: Optional[str] = None
+    category: Optional[Union[str, List[str]]] = None
+    department: Optional[Union[str, List[str]]] = None
+    doc_type: Optional[Union[str, List[str]]] = None
+    region: Optional[Union[str, List[str]]] = None
 
 
 class FileUploadRequest(BaseModel):
