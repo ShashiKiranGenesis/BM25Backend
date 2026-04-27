@@ -18,7 +18,10 @@ async def ask_question(request: QueryRequest):
             question=request.question,
             top_k=request.top_k,
             rerank_top_n=request.rerank_top_n,
-            filter_files=request.filter_files,
+            category=request.category,
+            department=request.department,
+            doc_type=request.doc_type,
+            region=request.region,
         )
 
         source_chunks = [

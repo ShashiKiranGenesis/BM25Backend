@@ -86,7 +86,10 @@ async def run_rag_pipeline(
     question: str,
     top_k: int = 15,
     rerank_top_n: int = 5,
-    filter_files: Optional[List[str]] = None,
+    category: Optional[str] = None,
+    department: Optional[str] = None,
+    doc_type: Optional[str] = None,
+    region: Optional[str] = None,
 ) -> Dict:
     """
     Full RAG pipeline:
@@ -94,7 +97,7 @@ async def run_rag_pipeline(
       2. FlashRank reranking
       3. LLM answer generation
 
-    Returns a dict with answer and source_chunks.
+    Supports filtering by category, department, doc_type, and region.
     """
     if retriever is None:
         logger.error("RAG pipeline called but system not initialized")
@@ -102,8 +105,20 @@ async def run_rag_pipeline(
 
     logger.info("Running RAG pipeline for question: %s", question[:100])
 
+    # Build metadata filters - only include non-empty values
+    metadata_filters = {}
+    if category and category.strip() and category.lower() != "string":
+        metadata_filters["category"] = category
+    if department and department.strip() and department.lower() != "string":
+        metadata_filters["department"] = department
+    if doc_type and doc_type.strip() and doc_type.lower() != "string":
+        metadata_filters["doc_type"] = doc_type
+    if region and region.strip() and region.lower() != "string":
+        metadata_filters["region"] = region
+
     # Step 1 — BM25 Retrieval
-    bm25_results = retriever.retrieve(question, top_k=top_k, filter_files=filter_files)
+    bm25_results = retriever.retrieve(question, top_k=top_k, metadata_filters=metadata_filters)
+    logger.debug("BM25 retrieved %d chunks (filters: %s)", len(bm25_results), metadata_filters)
     logger.debug("BM25 retrieved %d chunks", len(bm25_results))
 
     if not bm25_results:

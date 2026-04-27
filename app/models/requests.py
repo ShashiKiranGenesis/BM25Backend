@@ -8,7 +8,10 @@ class QueryRequest(BaseModel):
     question: str
     top_k: Optional[int] = 15
     rerank_top_n: Optional[int] = 5
-    filter_files: Optional[List[str]] = None
+    category: Optional[str] = None
+    department: Optional[str] = None
+    doc_type: Optional[str] = None
+    region: Optional[str] = None
 
 
 class FileUploadRequest(BaseModel):

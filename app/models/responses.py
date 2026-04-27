@@ -51,6 +51,7 @@ class DocumentDetailResponse(BaseModel):
     category: str
     department: str
     doc_type: str
+    region: str
     version: str
     description: str
     date_uploaded: str

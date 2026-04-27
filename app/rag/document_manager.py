@@ -291,6 +291,7 @@ class DocumentManager:
                 "category": enhanced_metadata["category"],
                 "department": enhanced_metadata["department"],
                 "doc_type": enhanced_metadata["doc_type"],
+                "region": enhanced_metadata.get("region", ""),
                 "version": enhanced_metadata["version"],
                 "description": enhanced_metadata["description"],
                 "date_uploaded": enhanced_metadata["date_uploaded"]
@@ -400,6 +401,7 @@ class DocumentManager:
                             "category": stored_metadata.get("category", "General"),
                             "department": stored_metadata.get("department", "Unknown"),
                             "doc_type": stored_metadata.get("doc_type", "PDF Document"),
+                            "region": stored_metadata.get("region", ""),
                             "version": stored_metadata.get("version", "1.0"),
                             "description": stored_metadata.get("description", f"Document: {filename}"),
                             "date_uploaded": stored_metadata.get("date_uploaded", stored_metadata.get("processed_at"))
@@ -469,6 +471,7 @@ class DocumentManager:
                     "category": info.get("category", "General"),
                     "department": info.get("department", "Unknown"),
                     "doc_type": info.get("doc_type", "PDF Document"),
+                    "region": info.get("region", ""),
                     "version": info.get("version", "1.0"),
                     "description": info.get("description", f"Document: {filename}"),
                     "date_uploaded": info.get("date_uploaded", info.get("processed_at"))
