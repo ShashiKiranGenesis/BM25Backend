@@ -1,6 +1,7 @@
 from .schemas import (
     QueryRequest,
     FileUploadRequest,
+    MetadataUpdateRequest,
     QueryResponse,
     ChunkResult,
     StatusResponse,

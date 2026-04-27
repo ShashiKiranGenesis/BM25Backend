@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi.encoders import jsonable_encoder
 from werkzeug.utils import secure_filename
 
 from app.utils import get_logger
@@ -10,6 +11,7 @@ from app.models import (
     UploadResponse,
     DocumentDetailResponse,
     DeleteDocumentResponse,
+    MetadataUpdateRequest,
 )
 from app.models import FileUploadRequest
 from app.services import (
@@ -167,13 +169,19 @@ def get_document(doc_id: str):
 
 
 @router.put("/{doc_id}", response_model=MetadataUpdateResponse)
-def update_document_by_id(doc_id: str, metadata: dict):
+def update_document_by_id(doc_id: str, metadata: MetadataUpdateRequest):
     """Update metadata for a specific document by its unique ID."""
     logger.info("PUT /documents/%s", doc_id)
 
     try:
-        if doc_manager.update_document_metadata_by_id(doc_id, metadata):
+        # Pydantic v1/v2 compat: use dict() or model_dump(). Both dict(exclude_unset=True) works in v1 and v2.
+        update_data = metadata.model_dump(exclude_unset=True) if hasattr(metadata, "model_dump") else metadata.dict(exclude_unset=True)
+        # Ensure dates are converted to strings
+        update_data = jsonable_encoder(update_data)
+        if doc_manager.update_document_metadata_by_id(doc_id, update_data):
             logger.info("Metadata updated for document: %s", doc_id)
+            # Re-initialize the RAG system so the retriever gets the updated chunks
+            initialize_rag(force_reprocess=False)
             return MetadataUpdateResponse(
                 success=True, message="Metadata updated successfully"
             )

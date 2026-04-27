@@ -43,3 +43,15 @@ class FileUploadRequest(BaseModel):
             effective_date=effective_date,
             description=description,
         )
+
+
+class MetadataUpdateRequest(BaseModel):
+    category: Optional[Literal["HR", "Finance", "IT", "Operations"]] = None
+    department: Optional[Literal["Engineering", "Sales", "Marketing", "Support"]] = None
+    doc_type: Optional[Literal["Policy", "SOP", "Runbook"]] = None
+    region: Optional[Literal["United States", "European Union", "Asia-Specific"]] = None
+    version: Optional[str] = None
+    effective_date: Optional[date] = None
+    description: Optional[str] = None
+    author: Optional[str] = None
+    tags: Optional[List[str]] = None
