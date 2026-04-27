@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+import uuid
 from datetime import datetime
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -170,6 +171,79 @@ class DocumentManager:
             return True
         return False
     
+    def get_document_by_id(self, doc_id: str) -> Optional[Dict]:
+        """Get document metadata by unique document ID."""
+        for filename, doc_info in self.metadata["documents"].items():
+            if doc_info.get("doc_id") == doc_id:
+                return {
+                    "filename": filename,
+                    **doc_info
+                }
+        return None
+    
+    def get_document_id_by_filename(self, filename: str) -> Optional[str]:
+        """Get document ID by filename."""
+        if filename in self.metadata["documents"]:
+            return self.metadata["documents"][filename].get("doc_id")
+        return None
+    
+    def update_document_metadata_by_id(self, doc_id: str, metadata_updates: Dict) -> bool:
+        """Update metadata for an existing document by its unique ID."""
+        for filename, doc_info in self.metadata["documents"].items():
+            if doc_info.get("doc_id") == doc_id:
+                self.metadata["documents"][filename].update(metadata_updates)
+                self._save_metadata()
+                return True
+        return False
+    
+    def delete_document_by_id(self, doc_id: str) -> bool:
+        """Delete a document and its chunks by unique document ID."""
+        filename_to_delete = None
+        for filename, doc_info in self.metadata["documents"].items():
+            if doc_info.get("doc_id") == doc_id:
+                filename_to_delete = filename
+                break
+        
+        if not filename_to_delete:
+            return False
+        
+        try:
+            # Delete from metadata
+            del self.metadata["documents"][filename_to_delete]
+            
+            # Delete PDF file if it exists
+            pdf_path = os.path.join(self.uploads_dir, filename_to_delete)
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+                logger.info(f"Deleted PDF file: {pdf_path}")
+            
+            # Delete chunks JSON file
+            safe_filename = Path(filename_to_delete).stem
+            safe_filename = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in safe_filename)
+            json_filename = f"{safe_filename}_chunks.json"
+            json_path = os.path.join(self.chunks_dir, json_filename)
+            if os.path.exists(json_path):
+                os.remove(json_path)
+                logger.info(f"Deleted chunks file: {json_path}")
+            
+            # Update totals
+            pdf_files = self.scan_uploads_directory()
+            self.metadata["total_documents"] = len(pdf_files)
+            total_chunks = sum(
+                doc.get("chunks_count", 0) 
+                for doc in self.metadata["documents"].values()
+            )
+            self.metadata["total_chunks"] = total_chunks
+            
+            # Save metadata
+            self._save_metadata()
+            logger.info(f"Deleted document: {filename_to_delete} (ID: {doc_id})")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error deleting document {doc_id}: {e}")
+            return False
+    
     def process_document(self, file_path: str, additional_metadata: Dict = None) -> List[Dict]:
         """Process a single PDF document with enhanced metadata."""
         logger.info(f"Processing: {file_path}")
@@ -181,9 +255,14 @@ class DocumentManager:
         filename = os.path.basename(file_path)
         file_info = self._get_file_info(file_path)
         
+        # Generate unique document ID if not already present
+        existing_doc = self.metadata["documents"].get(filename)
+        doc_id = existing_doc.get("doc_id") if existing_doc else str(uuid.uuid4())
+        
         # Enhanced metadata with defaults
         enhanced_metadata = {
             **file_info,
+            "doc_id": doc_id,
             "chunks_count": len(chunks),
             "processed_at": datetime.now().isoformat(),
             "file_path": file_path,
@@ -205,7 +284,9 @@ class DocumentManager:
         for chunk in chunks:
             chunk["source_file"] = filename
             chunk["file_path"] = file_path
+            chunk["doc_id"] = doc_id
             chunk["document_metadata"] = {
+                "doc_id": doc_id,
                 "author": enhanced_metadata["author"],
                 "category": enhanced_metadata["category"],
                 "department": enhanced_metadata["department"],
@@ -380,6 +461,7 @@ class DocumentManager:
             "last_updated": self.metadata["last_updated"],
             "documents": {
                 filename: {
+                    "doc_id": info.get("doc_id", ""),
                     "chunks_count": info["chunks_count"],
                     "size": info["size"],
                     "processed_at": info["processed_at"],

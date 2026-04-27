@@ -9,6 +9,8 @@ from .responses import (
     StatusResponse,
     UploadResponse,
     MetadataUpdateResponse,
+    DocumentDetailResponse,
+    DeleteDocumentResponse,
 )
 
 __all__ = [
@@ -19,4 +21,6 @@ __all__ = [
     "StatusResponse",
     "UploadResponse",
     "MetadataUpdateResponse",
+    "DocumentDetailResponse",
+    "DeleteDocumentResponse",
 ]

@@ -31,6 +31,7 @@ class UploadResponse(BaseModel):
     success: bool
     message: str
     filename: Optional[str] = None
+    doc_id: Optional[str] = None
     total_documents: Optional[int] = None
     total_chunks: Optional[int] = None
 
@@ -38,3 +39,27 @@ class UploadResponse(BaseModel):
 class MetadataUpdateResponse(BaseModel):
     success: bool
     message: str
+
+
+class DocumentDetailResponse(BaseModel):
+    doc_id: str
+    filename: str
+    chunks_count: int
+    size: int
+    processed_at: str
+    author: str
+    category: str
+    department: str
+    doc_type: str
+    version: str
+    description: str
+    date_uploaded: str
+    tags: Optional[List[str]] = None
+
+
+class DeleteDocumentResponse(BaseModel):
+    success: bool
+    message: str
+    doc_id: str
+    total_documents: Optional[int] = None
+    total_chunks: Optional[int] = None

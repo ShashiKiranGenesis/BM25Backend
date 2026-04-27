@@ -6,4 +6,6 @@ from .schemas import (
     StatusResponse,
     UploadResponse,
     MetadataUpdateResponse,
+    DocumentDetailResponse,
+    DeleteDocumentResponse,
 )
