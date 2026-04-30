@@ -163,6 +163,28 @@ class DocumentManager:
             current_info["modified"] != stored_info.get("modified")
         )
     
+    def get_unique_filename(self, filename: str) -> tuple[str, bool]:
+        """Generate a unique filename if a duplicate exists.
+        
+        Args:
+            filename: Original filename
+            
+        Returns:
+            (unique_filename, was_renamed) - tuple where was_renamed indicates if renaming occurred
+        """
+        if filename not in self.metadata["documents"]:
+            return filename, False
+        
+        # File exists, generate unique name with counter
+        name, ext = os.path.splitext(filename)
+        counter = 1
+        while True:
+            new_filename = f"{name} ({counter}){ext}"
+            if new_filename not in self.metadata["documents"]:
+                logger.info(f"Auto-renamed duplicate: {filename} -> {new_filename}")
+                return new_filename, True
+            counter += 1
+    
     def update_document_metadata(self, filename: str, metadata_updates: Dict):
         """Update metadata for an existing document."""
         if filename in self.metadata["documents"]:

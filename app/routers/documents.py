@@ -73,6 +73,13 @@ async def upload_pdf(
     uploaded_date = datetime.utcnow()
     try:
         filename = secure_filename(file.filename)
+        
+        # Check for duplicates and auto-rename if needed
+        unique_filename, was_renamed = doc_manager.get_unique_filename(filename)
+        if was_renamed:
+            logger.warning(f"Duplicate filename detected. Renamed {filename} -> {unique_filename}")
+            filename = unique_filename
+        
         file_path = os.path.join(UPLOADS_DIR, filename)
 
         os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -97,9 +104,10 @@ async def upload_pdf(
         doc_info = doc_manager.get_document_info()
         doc_id = doc_manager.get_document_id_by_filename(filename)
 
+        rename_message = f" (renamed from {file.filename})" if was_renamed else ""
         return UploadResponse(
             success=True,
-            message=f"PDF uploaded successfully! Created {new_chunks_count} new chunks.",
+            message=f"PDF uploaded successfully! Created {new_chunks_count} new chunks.{rename_message}",
             filename=filename,
             doc_id=doc_id,
             total_documents=doc_info["total_documents"],
