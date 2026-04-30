@@ -15,9 +15,9 @@ class QueryRequest(BaseModel):
 
 
 class FileUploadRequest(BaseModel):
-    category: Literal["HR", "Finance", "IT", "Operations"]
+    category: Literal["HR", "Finance", "IT", "Operations", "Resume"]
     department: Literal["Engineering", "Sales", "Marketing", "Support"]
-    document_type: Literal["Policy", "SOP", "Runbook"]
+    document_type: Literal["Policy", "SOP", "Runbook", "Resume"]
     region: Literal["United States", "European Union", "Asia-Specific"]
     version: str
     effective_date: date
@@ -26,9 +26,9 @@ class FileUploadRequest(BaseModel):
     @classmethod
     def as_form(
         cls,
-        category: Literal["HR", "Finance", "IT", "Operations"] = Form(...),
+        category: Literal["HR", "Finance", "IT", "Operations", "Resume"] = Form(...),
         department: Literal["Engineering", "Sales", "Marketing", "Support"] = Form(...),
-        document_type: Literal["Policy", "SOP", "Runbook"] = Form(...),
+        document_type: Literal["Policy", "SOP", "Runbook", "Resume"] = Form(...),
         region: Literal["United States", "European Union", "Asia-Specific"] = Form(...),
         version: str = Form(...),
         effective_date: date = Form(...),
@@ -46,9 +46,9 @@ class FileUploadRequest(BaseModel):
 
 
 class MetadataUpdateRequest(BaseModel):
-    category: Optional[Literal["HR", "Finance", "IT", "Operations"]] = None
+    category: Optional[Literal["HR", "Finance", "IT", "Operations", "Resume"]] = None
     department: Optional[Literal["Engineering", "Sales", "Marketing", "Support"]] = None
-    doc_type: Optional[Literal["Policy", "SOP", "Runbook"]] = None
+    doc_type: Optional[Literal["Policy", "SOP", "Runbook", "Resume"]] = None
     region: Optional[Literal["United States", "European Union", "Asia-Specific"]] = None
     version: Optional[str] = None
     effective_date: Optional[date] = None

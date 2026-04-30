@@ -85,6 +85,9 @@ async def upload_pdf(
         os.makedirs(UPLOADS_DIR, exist_ok=True)
 
         contents = await file.read()
+        if len(contents) > 20 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File size exceeds the 20MB limit.")
+
         with open(file_path, "wb") as f:
             f.write(contents)
 
