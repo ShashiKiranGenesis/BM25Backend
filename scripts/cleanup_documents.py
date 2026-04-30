@@ -112,7 +112,9 @@ def cleanup_rag_system():
     print("="*70)
     print(f"\n⚠️  WARNING: This will delete ALL uploaded documents and data!")
     print(f"    - PDF files from: {UPLOADS_DIR}")
-    print(f"    - Chunk files from: {CHUNKS_DIR}")    print(f"    - Extracted text files from: {EXTRACTED_TEXT_DIR}")    print(f"    - Reset metadata file: {METADATA_FILE}")
+    print(f"    - Chunk files from: {CHUNKS_DIR}")
+    print(f"    - Extracted text files from: {EXTRACTED_TEXT_DIR}")
+    print(f"    - Reset metadata file: {METADATA_FILE}")
     
     response = input("\n❓ Are you sure you want to continue? (yes/no): ").strip().lower()
     

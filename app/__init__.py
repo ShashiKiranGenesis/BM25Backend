@@ -54,23 +54,6 @@ def create_app() -> FastAPI:
 
     logger.info("App created — routers registered")
 
-    # ── Exception Handlers ───────────────────────────────────────────────
-    # @app.exception_handler(StarletteHTTPException)
-    # async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    #     if exc.status_code == 404:
-    #         return JSONResponse(
-    #             status_code=404,
-    #             content={
-    #                 "message": f"The endpoint '{request.url.path}' does not exist",
-    #                 "method": request.method,
-    #                 "path": request.url.path,
-    #             },
-    #         )
-    #     return JSONResponse(
-    #         status_code=exc.status_code,
-    #         content={"error": exc.detail},
-    #     )
-
     # Health
     @app.get("/health")
     def health():
