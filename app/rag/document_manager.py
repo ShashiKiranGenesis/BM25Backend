@@ -298,6 +298,12 @@ class DocumentManager:
             "tags": []
         }
         
+        # Preserve existing metadata if document already exists
+        if existing_doc:
+            for k, v in existing_doc.items():
+                if k not in ["size", "modified", "hash", "chunks_count", "processed_at", "chunks_json_path"]:
+                    enhanced_metadata[k] = v
+        
         # Override with any provided metadata
         if additional_metadata:
             enhanced_metadata.update(additional_metadata)
